@@ -13,8 +13,8 @@
 #define ONE_WIRE_BUS 6
 
 // Rotary rotate
-#define ROT_A 2
-#define ROT_B 4
+#define ROT_A 4
+#define ROT_B 2
 #define BUTTON 3
 #define ROT_INTERRUPT 1
 #define BUTTON_INTERRUPT 0
@@ -22,12 +22,15 @@
 // LCD
 #define LCD_RS A1
 #define LCD_ENABLE A0
-#define LCD_D4 13
-#define LCD_D5 12
-#define LCD_D6 11
+#define LCD_D4 15
+#define LCD_D5 14
+#define LCD_D6 16
 #define LCD_D7 10
 
 #define RELAY 5
+
+// LED indicator
+#define INDICATOR 17
 
 // Menu Items
 #define MNU_RUN 0
@@ -58,9 +61,9 @@ volatile long onTime = 0;
 
 LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 
-double kp = 850;
-double ki = 0.5;
-double kd = 0.1;
+double kp = 679.06;
+double ki = 4.89;
+double kd = 0.0;
 
 PID pid(&currentTemperature, &output, &targetTemperature, kp, ki, kd, DIRECT);
 
@@ -78,14 +81,16 @@ const int kiAddress = 16;
 const int kdAddress = 24;
 
 void setup() {
-  sensors.begin();
+//  sensors.begin();
   lcd.begin(16, 2);
 
   pinMode(ROT_A, INPUT_PULLUP);
   pinMode(ROT_B, INPUT_PULLUP);
   pinMode(BUTTON, INPUT_PULLUP);
   pinMode(RELAY, OUTPUT);
+  pinMode(INDICATOR, OUTPUT);
   digitalWrite(RELAY, LOW);
+  digitalWrite(INDICATOR, LOW);
 
   windowStartTime = millis();
   pid.SetOutputLimits(0, windowSize);
@@ -108,7 +113,7 @@ void setup() {
   Serial.begin(9600);
 
   // Splash Screen
-  delay(3000);
+  delay(1000);
 
   // Initialize the PID and related variables
   LoadParameters();
@@ -124,7 +129,9 @@ void setup() {
 void commonLoop() {
   if (sensors.isConversionAvailable(tempSensor))
   {
+    digitalWrite(INDICATOR, HIGH);
     currentTemperature = sensors.getTempC(tempSensor);
+    digitalWrite(INDICATOR, LOW);
     sensors.requestTemperatures(); // prime the pump for the next one - but don't wait
   }
 
@@ -142,11 +149,13 @@ void rotateISR() {
   int a = digitalRead(ROT_A);
   int b = digitalRead(ROT_B);
   if(a == 1 && b == 0)
-    rotate--;
+    rotate = 1;
   else if (a == 1 && b == 1)
-    rotate++;
+    rotate = -1;
 }
+
 void pushISR() {
+  Serial.print("clicked!");
   clicked = true;
 }
 
@@ -155,7 +164,7 @@ void pushISR() {
 * Main Menu
 *********************************/
 State StoppedHead() {
-  pid.SetMode(MANUAL);
+//  pid.SetMode(MANUAL);
   digitalWrite(RELAY, LOW);
 
   lcd.clear();
