@@ -81,7 +81,6 @@ const int kiAddress = 16;
 const int kdAddress = 24;
 
 void setup() {
-//  sensors.begin();
   lcd.begin(16, 2);
 
   pinMode(ROT_A, INPUT_PULLUP);
@@ -105,15 +104,13 @@ void setup() {
   {
      lcd.setCursor(0, 1);
      lcd.print(F("Sensor Error"));
+     delay(5000);
   }
   sensors.setResolution(tempSensor, 12);
   sensors.setWaitForConversion(false);
   sensors.requestTemperatures();
 
   Serial.begin(9600);
-
-  // Splash Screen
-  delay(1000);
 
   // Initialize the PID and related variables
   LoadParameters();
@@ -129,10 +126,13 @@ void setup() {
 void commonLoop() {
   if (sensors.isConversionAvailable(tempSensor))
   {
-    digitalWrite(INDICATOR, HIGH);
+    Serial.println("  Getting temperature...")
     currentTemperature = sensors.getTempC(tempSensor);
-    digitalWrite(INDICATOR, LOW);
+
+    Serial.println("  Requesting next temperature...")
     sensors.requestTemperatures(); // prime the pump for the next one - but don't wait
+
+    Serial.println("  Done.")
   }
 
   showState();
@@ -155,16 +155,14 @@ void rotateISR() {
 }
 
 void pushISR() {
-  Serial.print("clicked!");
   clicked = true;
 }
-
 
 /********************************
 * Main Menu
 *********************************/
 State StoppedHead() {
-//  pid.SetMode(MANUAL);
+  pid.SetMode(MANUAL);
   digitalWrite(RELAY, LOW);
 
   lcd.clear();
@@ -471,20 +469,20 @@ void SaveParameters()
 void LoadParameters()
 {
   // Load from EEPROM
-   targetTemperature = EEPROM_readDouble(setpointAddress);
-   kp = EEPROM_readDouble(kpAddress);
-   ki = EEPROM_readDouble(kiAddress);
-   kd = EEPROM_readDouble(kdAddress);
+  targetTemperature = EEPROM_readDouble(setpointAddress);
+  kp = EEPROM_readDouble(kpAddress);
+  ki = EEPROM_readDouble(kiAddress);
+  kd = EEPROM_readDouble(kdAddress);
 
-   // Use defaults if EEPROM values are invalid
-   if (isnan(targetTemperature))
-     targetTemperature = 72;
-   if (isnan(kp))
-     kp = 850;
-   if (isnan(ki))
-     ki = 0.5;
-   if (isnan(kd))
-     kd = 0.1;
+  // Use defaults if EEPROM values are invalid
+  if (isnan(targetTemperature))
+    targetTemperature = 72;
+  if (isnan(kp))
+    kp = 850;
+  if (isnan(ki))
+    ki = 0.5;
+  if (isnan(kd))
+    kd = 0.1;
 }
 
 // ************************************************
@@ -506,7 +504,7 @@ double EEPROM_readDouble(int address)
   byte* p = (byte*)(void*)&value;
   for (int i = 0; i < sizeof(value); i++)
     *p++ = EEPROM.read(address++);
-   return value;
+  return value;
 }
 
 void TimerInterrupt()
