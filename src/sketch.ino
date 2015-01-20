@@ -1,4 +1,3 @@
-#include <EEPROM.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include <LiquidCrystal.h>
@@ -33,13 +32,10 @@ boolean running = false;
 boolean on = false;
 
 double currentTemperature = 0;
-double targetTemperature = 70;
+double targetTemperature = 80;
 double output = 0;
 
 LiquidCrystal lcd(LCD_RS, LCD_ENABLE, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
-
-// EEPROM addresses for persisted data
-const int setpointAddress = 0;
 
 void setup() {
   lcd.begin(16, 2);
@@ -64,9 +60,6 @@ void setup() {
   sensors.setResolution(tempSensor, 12);
   sensors.setWaitForConversion(false);
   sensors.requestTemperatures();
-
-  // Initialize the PID and related variables
-  LoadParameters();
 
   displayState();
   displayMode();
@@ -150,48 +143,4 @@ void rotateISR() {
 
 void pushISR() {
   clicked = true;
-}
-
-// ************************************************
-// Save any parameter changes to EEPROM
-// ************************************************
-void SaveParameters()
-{
-  if (targetTemperature != EEPROM_readDouble(setpointAddress))
-    EEPROM_writeDouble(setpointAddress, targetTemperature);
-}
-
-// ************************************************
-// Load parameters from EEPROM
-// ************************************************
-void LoadParameters()
-{
-  // Load from EEPROM
-  targetTemperature = EEPROM_readDouble(setpointAddress);
-
-  // Use defaults if EEPROM values are invalid
-  if (isnan(targetTemperature))
-    targetTemperature = 72;
-}
-
-// ************************************************
-// Write floating point values to EEPROM
-// ************************************************
-void EEPROM_writeDouble(int address, double value)
-{
-  byte* p = (byte*)(void*)&value;
-  for (int i = 0; i < sizeof(value); i++)
-    EEPROM.write(address++, *p++);
-}
-
-// ************************************************
-// Read floating point values from EEPROM
-// ************************************************
-double EEPROM_readDouble(int address)
-{
-  double value = 0.0;
-  byte* p = (byte*)(void*)&value;
-  for (int i = 0; i < sizeof(value); i++)
-    *p++ = EEPROM.read(address++);
-  return value;
 }
